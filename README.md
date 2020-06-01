@@ -36,7 +36,7 @@ Current PIN Mapping:
 | 6 | 😡 <a style="color: red">**DO NOT USE!!!!**</a> (connect to pin 11 to use pin 11 to control Motor) |  
 | 7 | 😑 RIGHT_DIR_PIN |
 | 8 | 😑 LEFT_DIR_PIN
-| 9 |SENSOR_1_PIN
+| 9 | 😑 SENSOR_1_PIN
 | 10 | 😀 <a style="color: green">**NOT USED**</a>
 | 11 | 😑 RIGHT_PWM_PIN
 | 12 | 😑 SENSOR_0_PIN
