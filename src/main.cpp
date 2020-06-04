@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <PID_v1.h>
 #include <QTRSensors.h>
-#include <SPI.h>
 
 #include "MotorControl.h"
 
@@ -10,6 +9,8 @@
 
 #define SONAR_TRIG_PIN A0
 #define SONAR_ECHO_PIN A1
+
+#define START_BUTTON_PIN 10
 
 const uint8_t sensorCount = 8;
 const uint8_t sensorPins[sensorCount] = {12, 9, 5, 4, A5, A4, A3, A2};
@@ -22,12 +23,12 @@ double adjust = 0;
 double initialBaseSpeed = 150;
 
 // Line follow base speed
-double baseSpeed = 220.0;
+double baseSpeed = 255.0;
 
 // use these with baseSpeed = 170
 double Kp = 0.065;
 double Ki = 0.0;
-double Kd = 0.0006;
+double Kd = 0.0009;
 
 uint64_t looopStartMillis = 0;
 
@@ -95,6 +96,7 @@ void setup() {
     // config sonar pin
     pinMode(SONAR_TRIG_PIN, OUTPUT);
     pinMode(SONAR_ECHO_PIN, INPUT);
+    pinMode(START_BUTTON_PIN, INPUT_PULLUP);
 
     // config indicator led
     pinMode(LED_BUILTIN, OUTPUT);
@@ -116,6 +118,8 @@ void setup() {
 
     delay(2000);
     initLineFollowMode();
+    while (digitalRead(START_BUTTON_PIN)) {
+    };
     looopStartMillis = millis();
 }
 
@@ -124,7 +128,7 @@ double speed = initialBaseSpeed;
 uint64_t lastCountMillis = 0;
 
 void loop() {
-    if (status == 0) {
+    if (status == 0) {  // if status = 0 aka following line
         if (ramUp) {
             if (millis() - looopStartMillis > 750) {
                 pid.SetOutputLimits((double)-baseSpeed, (double)baseSpeed);
@@ -134,14 +138,18 @@ void loop() {
         }
 
         uint16_t position = qtr.readLineBlack(sensorValues);
-
-        if (millis() - switchMillis > 500 && (sensorValues[4] > 700 && sensorValues[3] > 700 && (sensorValues[2] > 700 || sensorValues[5] > 700))) {
-            if (!tunelPassed)
-                status = 1;
-            else {
-                status = 100;
+        // if detect line
+        if ((sensorValues[4] > 800 && sensorValues[3] > 800 && (sensorValues[2] > 800 || sensorValues[5] > 800))) {
+            if (millis() - switchMillis > 500) {
+                // doesn't switch when ram up to avoid the START arrow
+                if (!ramUp) {
+                    if (!tunelPassed)
+                        status = 1;
+                    else  // jump to stop
+                        status = 100;
+                    switchMillis = millis();
+                }
             }
-            switchMillis = millis();
         }
 
 // ! Turn off debug to avoid oscillation
@@ -164,7 +172,8 @@ void loop() {
         } else {
             Motor::setSpeed(speed, speed + adjust);
         }
-    } else if (status == 1) {
+
+    } else if (status == 1) {  // aka tunnel mode
         qtr.readCalibrated(sensorValues);
         if (millis() - switchMillis > 500 && (sensorValues[0] > 700 || sensorValues[1] > 700 || sensorValues[2] > 700 || sensorValues[3] > 700 || sensorValues[4] > 700 || sensorValues[5] > 700 || sensorValues[6] > 700 || sensorValues[7] > 700)) {
             status = 0;
@@ -175,8 +184,12 @@ void loop() {
         if (checkDistance() <= 10) {
             adjustCarTunnel();
         }
+
     } else if (status == 100) {
-        delay(200);
+        Motor::setSpeed(200, 0);
+        delay(300);
         Motor::setSpeed(0, 0);
+        while (1) {
+        };
     }
 }
