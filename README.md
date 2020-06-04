@@ -35,9 +35,9 @@ Current PIN Mapping:
 | 5 | 😑 SENSOR_2_PIN |
 | 6 | 😡 <a style="color: red">**DO NOT USE!!!!**</a> (connect to pin 11 to use pin 11 to control Motor) |  
 | 7 | 😑 RIGHT_DIR_PIN |
-| 8 | 😑 LEFT_DIR_PIN
-| 9 | 😑 SENSOR_1_PIN
-| 10 | 😀 <a style="color: green">**NOT USED**</a>
-| 11 | 😑 RIGHT_PWM_PIN
-| 12 | 😑 SENSOR_0_PIN
-| 13 | 😑 LED_PIN
+| 8 | 😑 LEFT_DIR_PIN |
+| 9 | 😑 SENSOR_1_PIN |
+| 10 | 😑 START_BUTTON_PIN |
+| 11 | 😑 RIGHT_PWM_PIN |
+| 12 | 😑 SENSOR_0_PIN |
+| 13 | 😑 LED_PIN |
