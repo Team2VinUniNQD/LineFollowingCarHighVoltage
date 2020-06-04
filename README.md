@@ -15,6 +15,14 @@ PID algorithm:
 
 - https://robotresearchlab.com/2019/02/16/pid-line-follower-tuning/
 
+## Specfication:
+
+- Board voltage: 3.3V
+- Board type: Kidcodes STEM Education Board
+- Motor voltage: 11.1V
+- Motor type: Yellow motor V1 Plastic Gear
+- Power Sources: Lipo battery
+
 Current PIN Mapping:
 | PIN | Function |
 | --- | -------- |
