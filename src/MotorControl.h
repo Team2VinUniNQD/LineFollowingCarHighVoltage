@@ -1,3 +1,6 @@
+#ifndef _MOTOR_CONTROL_H
+#define _MOTOR_CONTROL_H
+
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <avr/portpins.h>
@@ -53,3 +56,4 @@ inline void setDir(motorDir leftDir, motorDir rightDir) {
     setRightDir(rightDir);
 }
 }  // namespace Motor
+#endif /* MOTOR_H */

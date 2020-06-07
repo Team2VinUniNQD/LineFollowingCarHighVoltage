@@ -1,3 +1,7 @@
+/**
+ * ! Please do not include this file
+ */
+
 #ifndef PIN_MAPPING
 #define PIN_MAPPING
 

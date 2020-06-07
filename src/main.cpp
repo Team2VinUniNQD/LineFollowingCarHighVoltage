@@ -2,10 +2,14 @@
 #include <PID_v1.h>
 #include <QTRSensors.h>
 
+#include "LedControl.h"
 #include "MotorControl.h"
 
-// ! Tunr off _DEBUG to avoid oscillation
-#define _DEBUG false
+// * Flag to toggle feature
+// ! Tunr off FLAG_DEBUG to avoid oscillation
+#define FLAG_DEBUG false
+
+#define FLAG_USE_NEW_CALIBRATE_PROCEDURE true
 
 #define SONAR_TRIG_PIN A0
 #define SONAR_ECHO_PIN A1
@@ -41,6 +45,10 @@ bool inRamUp = true;
 uint8_t status = 0;
 bool tunelPassed = false;
 
+bool ramUp = true;
+double speed = initialBaseSpeed;
+uint64_t lastCountMillis = 0;
+
 uint64_t switchMillis = 0;
 
 uint32_t checkDistance() {
@@ -55,6 +63,8 @@ uint32_t checkDistance() {
 void adjustCarTunnel() {
     Motor::setSpeed(255, 10);
 }
+
+#if (!FLAG_USE_NEW_CALIBRATE_PROCEDURE)
 
 void calibrateSensor() {
     digitalWrite(LED_BUILTIN, HIGH);  // turn on Arduino's LED to indicate we are in calibration mode
@@ -84,6 +94,19 @@ void calibrateSensor() {
     Motor::setDir(Motor::motorDir::forward, Motor::motorDir::forward);
     digitalWrite(LED_BUILTIN, LOW);  // turn off Arduino's LED to indicate we are through with calibration
 }
+#else
+void calibrateSensor() {
+    LED::turnOn();
+    Motor::setDir(Motor::motorDir::forward, Motor::motorDir::reverse);
+    Motor::setSpeed(100, 100);
+    for (uint16_t i = 0; i < 400; i++)
+        qtr.calibrate();
+    Motor::setSpeed(0, 0);
+    Motor::setDir(Motor::motorDir::forward, Motor::motorDir::forward);
+    LED::turnOff();
+}
+
+#endif
 
 void initLineFollowMode() {
     pid.SetTunings(Kp, Ki, Kd);
@@ -92,8 +115,12 @@ void initLineFollowMode() {
     pid.SetOutputLimits(-initialBaseSpeed, initialBaseSpeed);
     lineFollowInitialized = true;
 }
-void setup() {
-    // config sonar pin
+
+int main() {
+    // Arduino stuff, don't touch
+    init();
+
+    // Prog stuff, can be touched
     pinMode(SONAR_TRIG_PIN, OUTPUT);
     pinMode(SONAR_ECHO_PIN, INPUT);
     pinMode(START_BUTTON_PIN, INPUT_PULLUP);
@@ -110,9 +137,10 @@ void setup() {
 
     // Init motor (timer,...)
     Motor::begin();
+    LED::begin();
     calibrateSensor();
 
-#if _DEBUG
+#if FLAG_DEBUG
     Serial.begin(115200);
 #endif
 
@@ -121,75 +149,70 @@ void setup() {
     while (digitalRead(START_BUTTON_PIN)) {
     };
     looopStartMillis = millis();
-}
-
-bool ramUp = true;
-double speed = initialBaseSpeed;
-uint64_t lastCountMillis = 0;
-
-void loop() {
-    if (status == 0) {  // if status = 0 aka following line
-        if (ramUp) {
-            if (millis() - looopStartMillis > 750) {
-                pid.SetOutputLimits((double)-baseSpeed, (double)baseSpeed);
-                speed = baseSpeed;
-                ramUp = false;
-            }
-        }
-
-        uint16_t position = qtr.readLineBlack(sensorValues);
-        // if detect line
-        if ((sensorValues[4] > 800 && sensorValues[3] > 800 && (sensorValues[2] > 800 || sensorValues[5] > 800))) {
-            if (millis() - switchMillis > 500) {
-                // doesn't switch when ram up to avoid the START arrow
-                if (!ramUp) {
-                    if (!tunelPassed)
-                        status = 1;
-                    else  // jump to stop
-                        status = 100;
-                    switchMillis = millis();
+    for (;;) {
+        if (status == 0) {  // if status = 0 aka following line
+            if (ramUp) {
+                if (millis() - looopStartMillis > 750) {
+                    pid.SetOutputLimits((double)-baseSpeed, (double)baseSpeed);
+                    speed = baseSpeed;
+                    ramUp = false;
                 }
             }
-        }
+
+            uint16_t position = qtr.readLineBlack(sensorValues);
+            // if detect line
+            if ((sensorValues[4] > 800 && sensorValues[3] > 800 && (sensorValues[2] > 800 || sensorValues[5] > 800))) {
+                if (millis() - switchMillis > 500) {
+                    // doesn't switch when ram up to avoid the START arrow
+                    if (!ramUp) {
+                        if (!tunelPassed)
+                            status = 1;
+                        else  // jump to stop
+                            status = 100;
+                        switchMillis = millis();
+                    }
+                }
+            }
 
 // ! Turn off debug to avoid oscillation
-#if (_DEBUG)
-        for (auto values : sensorValues) {
-            Serial.print(values);
-            Serial.print(' ');
-        }
+#if (FLAG_DEBUG)
+            for (auto values : sensorValues) {
+                Serial.print(values);
+                Serial.print(' ');
+            }
 
-        Serial.println();
-        Serial.print(position);
-        Serial.print(" ");
-        Serial.println(adjust);
-        delay(50);
+            Serial.println();
+            Serial.print(position);
+            Serial.print(" ");
+            Serial.println(adjust);
+            delay(50);
 #endif
-        pos = position;
-        pid.Compute();
-        if (adjust > 0) {
-            Motor::setSpeed(speed - adjust, speed);
-        } else {
-            Motor::setSpeed(speed, speed + adjust);
-        }
+            pos = position;
+            pid.Compute();
+            if (adjust > 0) {
+                Motor::setSpeed(speed - adjust, speed);
+            } else {
+                Motor::setSpeed(speed, speed + adjust);
+            }
 
-    } else if (status == 1) {  // aka tunnel mode
-        qtr.readCalibrated(sensorValues);
-        if (millis() - switchMillis > 500 && (sensorValues[0] > 700 || sensorValues[1] > 700 || sensorValues[2] > 700 || sensorValues[3] > 700 || sensorValues[4] > 700 || sensorValues[5] > 700 || sensorValues[6] > 700 || sensorValues[7] > 700)) {
-            status = 0;
-            tunelPassed = true;
-            switchMillis = millis();
-        }
-        Motor::setSpeed(200, 200);
-        if (checkDistance() <= 10) {
-            adjustCarTunnel();
-        }
+        } else if (status == 1) {  // aka tunnel mode
+            qtr.readCalibrated(sensorValues);
+            if (millis() - switchMillis > 500 && (sensorValues[0] > 700 || sensorValues[1] > 700 || sensorValues[2] > 700 || sensorValues[3] > 700 || sensorValues[4] > 700 || sensorValues[5] > 700 || sensorValues[6] > 700 || sensorValues[7] > 700)) {
+                status = 0;
+                tunelPassed = true;
+                switchMillis = millis();
+            }
+            Motor::setSpeed(200, 200);
+            if (checkDistance() <= 10) {
+                adjustCarTunnel();
+            }
 
-    } else if (status == 100) {
-        Motor::setSpeed(200, 0);
-        delay(300);
-        Motor::setSpeed(0, 0);
-        while (1) {
-        };
+        } else if (status == 100) {
+            Motor::setSpeed(200, 0);
+            delay(300);
+            Motor::setSpeed(0, 0);
+            return 0;
+        }
     }
+    return 0;
 }
