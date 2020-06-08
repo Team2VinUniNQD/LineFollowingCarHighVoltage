@@ -60,7 +60,7 @@ uint32_t checkDistance() {
     return dis;
 }
 
-void adjustCarTunnel() {
+inline void adjustCarTunnel() {
     Motor::setSpeed(255, 10);
 }
 
@@ -98,7 +98,7 @@ void calibrateSensor() {
 void calibrateSensor() {
     LED::turnOn();
     Motor::setDir(Motor::motorDir::forward, Motor::motorDir::reverse);
-    Motor::setSpeed(100, 100);
+    Motor::setSpeed(90, 90);
     for (uint16_t i = 0; i < 400; i++)
         qtr.calibrate();
     Motor::setSpeed(0, 0);
@@ -159,7 +159,7 @@ int main() {
                 }
             }
 
-            uint16_t position = qtr.readLineBlack(sensorValues);
+            pos = qtr.readLineBlack(sensorValues);
             // if detect line
             if ((sensorValues[4] > 800 && sensorValues[3] > 800 && (sensorValues[2] > 800 || sensorValues[5] > 800))) {
                 if (millis() - switchMillis > 500) {
@@ -187,7 +187,7 @@ int main() {
             Serial.println(adjust);
             delay(50);
 #endif
-            pos = position;
+
             pid.Compute();
             if (adjust > 0) {
                 Motor::setSpeed(speed - adjust, speed);
