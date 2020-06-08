@@ -21,8 +21,8 @@ const uint8_t sensorPins[sensorCount] = {12, 9, 5, 4, A5, A4, A3, A2};
 uint16_t sensorValues[sensorCount];
 
 double setPoint = 3500.0;
-double pos = 0;
-double adjust = 0;
+double pos = 0.0;
+double adjust = 0.0;
 
 double initialBaseSpeed = 150;
 
