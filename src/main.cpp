@@ -27,12 +27,12 @@ double adjust = 0.0;
 double initialBaseSpeed = 150;
 
 // Line follow base speed
-double baseSpeed = 255.0;
+double baseSpeed = 170.0;
 
 // use these with baseSpeed = 170
 double Kp = 0.065;
 double Ki = 0.0;
-double Kd = 0.0009;
+double Kd = 0.0013;
 
 uint64_t looopStartMillis = 0;
 
@@ -165,11 +165,13 @@ int main() {
                 if (millis() - switchMillis > 500) {
                     // doesn't switch when ram up to avoid the START arrow
                     if (!ramUp) {
-                        if (!tunelPassed)
-                            status = 1;
-                        else  // jump to stop
-                            status = 100;
-                        switchMillis = millis();
+                        if (millis() - looopStartMillis >= 7000) {
+                            if (!tunelPassed)
+                                status = 1;
+                            else  // jump to stop
+                                status = 100;
+                            switchMillis = millis();
+                        }
                     }
                 }
             }
@@ -208,10 +210,19 @@ int main() {
             }
 
         } else if (status == 100) {
-            Motor::setSpeed(200, 0);
-            delay(300);
+            Motor::setSpeed(200, 100);
+            delay(200);
             Motor::setSpeed(0, 0);
-            return 0;
+            status = 200;
+        } else if (status == 200) {
+            if (!digitalRead(START_BUTTON_PIN)) {
+                status = 0;
+                tunelPassed = false;
+#if (FLAG_USE_RAMUP)
+                ramUp = true;
+#endif
+                looopStartMillis = millis();
+            };
         }
     }
     return 0;
