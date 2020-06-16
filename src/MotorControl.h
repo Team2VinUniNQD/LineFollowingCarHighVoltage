@@ -17,6 +17,7 @@ enum class motorDir {
     reverse
 };
 inline void begin() {
+    uint8_t oldSREG = SREG;
     cli();
     DDRD |= (1 << LEFT_PWM_PIN) | (1 << LEFT_DIR_PIN);
     DDRB |= (1 << RIGHT_PWM_PIN) | (1 << RIGHT_DIR_PIN);
@@ -31,6 +32,7 @@ inline void begin() {
     OCR2B = 0;
 
     sei();
+    SREG = oldSREG;
 };
 inline void setLeftSpeed(uint8_t speed) {
     OCR2A = speed;
