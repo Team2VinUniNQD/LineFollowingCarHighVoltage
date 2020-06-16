@@ -126,6 +126,7 @@ int main() {
             }
 
             pos = qtr.readLineBlack(sensorValues);
+            currentMillis = millis();
             // if detect line
             if ((sensorValues[4] > 800 && sensorValues[3] > 800 && (sensorValues[2] > 800 || sensorValues[5] > 800))) {
                 if (currentMillis - switchMillis > 500) {
@@ -183,7 +184,7 @@ int main() {
                 status = 0;
                 tunelPassed = false;
                 ramUp = true;
-                looopStartMillis = millis();
+                looopStartMillis = currentMillis;
             };
         }
     }

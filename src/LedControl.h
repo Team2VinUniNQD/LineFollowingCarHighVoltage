@@ -2,7 +2,6 @@
 #define _LED_CONTROL_H_
 
 #include <avr/io.h>
-#include <avr/portpins.h>
 
 #define LED_PIN PB5
 

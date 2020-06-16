@@ -1,9 +1,7 @@
 #ifndef _MOTOR_CONTROL_H
 #define _MOTOR_CONTROL_H
 
-#include <avr/interrupt.h>
 #include <avr/io.h>
-#include <avr/portpins.h>
 
 #define LEFT_DIR_PIN PD7   // pin 8
 #define RIGHT_DIR_PIN PB0  // pin 7
