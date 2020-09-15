@@ -4,7 +4,6 @@
 
 #include "LedControl.h"
 #include "MotorControl.h"
-
 // * Flag to toggle feature
 // ! Tunr off FLAG_DEBUG to avoid oscillation
 #define FLAG_DEBUG false
@@ -112,11 +111,12 @@ int main() {
     delay(2000);
     initLineFollowMode();
     while (digitalRead(START_BUTTON_PIN)) {
+        // empty waiting loop
     };
     looopStartMillis = millis();
     for (;;) {
         currentMillis = millis();
-        if (status == 0) {  // if status = 0 aka following line
+        if (status == 0) { // if status = 0 aka following line
             if (ramUp) {
                 if (currentMillis - looopStartMillis > 750) {
                     pid.SetOutputLimits((double)-baseSpeed, (double)baseSpeed);
@@ -134,7 +134,7 @@ int main() {
                     if (currentMillis - looopStartMillis >= 7000) {
                         if (!tunelPassed)
                             status = 1;
-                        else  // jump to stop
+                        else // jump to stop
                             status = 100;
                         switchMillis = currentMillis;
                     }
@@ -161,8 +161,7 @@ int main() {
             } else {
                 Motor::setSpeed(speed, speed + adjust);
             }
-
-        } else if (status == 1) {  // aka tunnel mode
+        } else if (status == 1) { // aka tunnel mode
             qtr.readCalibrated(sensorValues);
             if (currentMillis - switchMillis > 500 && (sensorValues[0] > 700 || sensorValues[1] > 700 || sensorValues[2] > 700 || sensorValues[3] > 700 || sensorValues[4] > 700 || sensorValues[5] > 700 || sensorValues[6] > 700 || sensorValues[7] > 700)) {
                 status = 0;
@@ -173,13 +172,13 @@ int main() {
             if (checkDistance() <= 10) {
                 adjustCarTunnel();
             }
-
         } else if (status == 100) {
             Motor::setSpeed(200, 100);
             delay(100);
             Motor::setSpeed(0, 0);
             status = 200;
         } else if (status == 200) {
+            // wait for the button to be pressed
             if (!digitalRead(START_BUTTON_PIN)) {
                 status = 0;
                 tunelPassed = false;
